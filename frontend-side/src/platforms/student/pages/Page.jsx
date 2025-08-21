@@ -182,51 +182,79 @@ const StudentDashBoard = () => {
       <div className="student-student-navigation">
         {/* Sidebar */}
         <aside className="student-navigation-sidebar">
-          <nav>
+          <nav className="flex flex-col gap-2 p-6 w-full md:w-[350px] bg-gradient-to-b from-gray-50 to-white shadow-lg rounded-xl border border-gray-100">
+            {/* Courses Button */}
             <button
-              className={`student-navigation-btn ${
-                activeTab === "courses" ? "active" : ""
-              }`}
+              className={`relative flex items-center gap-4 w-full p-4 mt-6 h-16 text-left rounded-xl transition-all duration-500 transform hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-md hover:shadow-lg group overflow-hidden ${
+                activeTab === "courses"
+                  ? "bg-blue-100/80 text-blue-600 font-bold shadow-inner border border-blue-200/50"
+                  : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-500"
+              } group overflow-hidden`}
               onClick={() => setActiveTab("courses")}
             >
-              <span className="icon">
-                <i class="fa-solid fa-chalkboard-user"></i>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="text-2xl transition-transform duration-300 group-hover:scale-110 z-10">
+                <i className="fa-solid fa-chalkboard-user"></i>
               </span>
-              <span className="icon-name">All Courses</span>
+              <span className="text-lg font-medium z-10">All Courses</span>
+              <span className="ml-auto text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <i className="fas fa-chevron-right"></i>
+              </span>
             </button>
 
+            {/* Challenges Button */}
             <button
-              className={`student-navigation-btn ${
-                activeTab === "challenges" ? "active" : ""
-              }`}
+              className={`relative flex items-center gap-4 w-full p-4 mb-1 text-left rounded-xl transition-all duration-300 transform hover:scale-[1.02] ${
+                activeTab === "challenges"
+                  ? "bg-blue-100/80 text-blue-600 font-bold shadow-inner border border-blue-200/50"
+                  : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-500"
+              } group overflow-hidden`}
               onClick={() => setActiveTab("challenges")}
             >
-              <span className="icon">
-                <i class="fa-solid fa-chalkboard"></i>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="text-2xl transition-transform duration-300 group-hover:scale-110 z-10">
+                <i className="fa-solid fa-chalkboard"></i>
               </span>
-              <span className="icon-name">Challenges</span>
+              {/* Uncomment if needed */}
+              {/* <span className="text-lg font-medium z-10">Challenges</span> */}
+              <span className="ml-auto text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <i className="fas fa-chevron-right"></i>
+              </span>
             </button>
 
+            {/* Performance Button */}
             <button
-              className={`student-navigation-btn ${
-                activeTab === "performance" ? "active" : ""
-              }`}
+              className={`relative flex items-center gap-4 w-full p-4 mt-6 h-16 text-left rounded-xl transition-all duration-500 transform hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-md hover:shadow-lg group overflow-hidden ${
+                activeTab === "performance"
+                  ? "bg-blue-100/80 text-blue-600 font-bold shadow-inner border border-blue-200/50"
+                  : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-500"
+              } group overflow-hidden`}
               onClick={() => setActiveTab("performance")}
             >
-              <span className="icon">
-                <i class="fa-solid fa-graduation-cap"></i>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="text-2xl transition-transform duration-300 group-hover:scale-110 z-10">
+                <i className="fa-solid fa-graduation-cap"></i>
               </span>
-              <span className="icon-name">My Performance</span>
+              <span className="text-lg font-medium z-10">My Performance</span>
+              <span className="ml-auto text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <i className="fas fa-chevron-right"></i>
+              </span>
             </button>
 
+            {/* Exam Room Button - Special Styling */}
             <button
-              className="student-exam-room-btn"
+              className="relative flex items-center gap-4 w-full p-4 mt-6 h-16 text-left rounded-xl transition-all duration-500 transform hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-md hover:shadow-lg group overflow-hidden"
               onClick={() => setShowExamModal(true)}
             >
-              <span className="icon">
-                <i class="fa-solid fa-door-open"></i>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="text-2xl transition-transform duration-300 group-hover:scale-110 z-10">
+                <i className="fa-solid fa-door-open"></i>
               </span>
-              <span className="icon-name">Enter Exam Room</span>
+              <span className="text-lg z-10">Enter Exam Room</span>
+              <span className="ml-auto text-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 animate-pulse">
+                <i className="fas fa-arrow-right"></i>
+              </span>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-300/50 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-700"></div>
             </button>
           </nav>
         </aside>
@@ -239,41 +267,28 @@ const StudentDashBoard = () => {
               <div
                 key={course._id || course.id}
                 onClick={() => handleCourseClick(course)}
-                className="magic-button 
+                className="bg-white shadow-md rounded-2xl h-80  flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300 
                  animate-[wiggle_3s_ease-in-out_infinite]"
               >
-                
                 {/* Status badge */}
-                <span
-                  className={`status-button${
-                    course.status === "completed"
-                      ? "bg-green-500/90 text-white hover:bg-green-600"
-                      : course.status === "enrolled"
-                      ? "bg-yellow-400/90 text-gray-900 hover:bg-yellow-500"
-                      : "bg-gray-400/80 text-white hover:bg-gray-500"
-                  }`}
-                >
-                  {course.status}
-                </span>
+                <span>{course.status}</span>
                 {/* Course image */}
                 <img
                   src={course.courseIcon}
                   alt={course.courseName}
-                  className="rounded-t-lg "
+                  className="w-100% h-50% object-contain mb-4 rounded-t-lg "
                 />
-                <div class="p-5">
+                <br />
+                <div class="flex gap-10 mt-auto ">
                   {/* Course name */}
                   <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                     {course.courseName}
                   </h3>
-                </div>
-
-                {/* Badges */}
-                <div className="flex gap-2 mt-3 justify-center">
-                  {/* Code badge */}
-                  <span className="code-button">
-                    {course.code}
-                  </span>
+                  {/* Badges */}
+                  <div className="flex gap-2 mt-3 justify-center">
+                    {/* Code badge */}
+                    <span className="back-btn">{course.code}</span>
+                  </div>
                 </div>
               </div>
             ))}

@@ -85,22 +85,29 @@ const CourseDetail = () => {
 
   return (
     <div className="course-detail-container">
-      <div className="course-detail-content">
+      <div className="course-detail-content w-full max-w-5xl mx-auto p-4 sm:p-6">
         {/* Course Header */}
-        <div className="course-header">
-          <div className="course-info">
+        <div className="course-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          {/* Course Info */}
+          <div className="course-info flex items-center gap-4">
             <img
               src={course.courseIcon}
               alt={course.courseName}
-              className="course-icon"
+              className="w-50 h-26 sm:w-50 sm:h-26  object-contain "
             />
             <div className="course-details">
-              <h1>{course.courseName}</h1>
-              <p className="course-code">Code: {course.code}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                {course.courseName}
+              </h1>
+              <p className="course-code text-sm sm:text-base text-gray-500">
+                Code: {course.code}
+              </p>
             </div>
           </div>
+
+          {/* Back Button */}
           <button
-            className="course-header-back-btn"
+            className="back-btn"
             onClick={() => navigate("/studentdashboard")}
           >
             ← Back to Home
@@ -109,22 +116,33 @@ const CourseDetail = () => {
 
         {/* Topics Section */}
         <div className="topics-section">
-          <h2>Course Topics</h2>
-          <div className="topics-grid">
+          <h2 className="text-[2rem] text-gray-800 text-center">Course Topics</h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {topics.map((topic) => (
-              <div key={topic._id} className="topic-card">
-                <img src={course.courseIcon} alt="" />
-                <h3>{topic.name}</h3>
-                <p>{topic.notes?.length || 0} notes available</p>
-                <div className="topic-actions">
+              <div
+                key={topic._id}
+                className="bg-white shadow-md rounded-2xl p-6 flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300"
+              >
+                <img
+                  src={course.courseIcon}
+                  alt={topic.name}
+                  className="w-100% h-50% object-contain mb-4"
+                />
+                <h6 className="text-lg font-semibold text-gray-800">
+                  {topic.name}
+                </h6>
+                <p className="text-sm text-gray-500 mb-4">
+                  {topic.notes?.length || 0} notes available
+                </p>
+                <div className="flex gap-3 mt-auto">
                   <button
-                    className="btn btn-primary"
+                    className="back-btn"
                     onClick={() => openNotesOverlay(topic)}
                   >
                     View Notes
                   </button>
                   <button
-                    className="btn btn-secondary"
+                    className="back-btn"
                     onClick={() => openAssignmentOverlay(topic)}
                   >
                     View Assignment
