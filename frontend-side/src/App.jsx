@@ -38,7 +38,7 @@ import ClassCodesPage from "./platforms/admin/pages/classCodes/page";
 // import DashboardOverview from "./components/TutorDashboard/SchoolsManagement";
 // school import
 import SchoolAuth from "./components/SchoolAuth";
-import AssignmentsPage from "./platforms/admin/pages/assignments/page";
+  import AssignmentsPage from "./platforms/admin/pages/assignments/page";
 
 // Add this route
 

@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import './Assignments.css';
 
-const AssignmentsPage = () => {
-  const [assignments, setAssignments] = useState([]);
+const API_BASE = 'https://platform-zl0a.onrender.com/cobotKidsKenya';
+
+const AssessmentsPage = () => {
+  const [assessments, setAssessments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [topics, setTopics] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState({
+    assessments: true,
+    courses: false,
+    topics: false
+  });
+  const [error, setError] = useState({
+    assessments: null,
+    courses: null,
+    topics: null
+  });
   const [showForm, setShowForm] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState(null);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [editingAssessment, setEditingAssessment] = useState(null);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+  const [assessmentType, setAssessmentType] = useState('assignment'); // 'assignment' or 'exam'
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,130 +38,192 @@ const AssignmentsPage = () => {
     maxAttempts: 1,
     autoGrade: false,
     showResults: true,
-    status: 'draft'
+    status: 'draft',
+    // Exam-specific fields
+    code: '',
+    scheduledAt: ''
   });
 
   useEffect(() => {
-    fetchAssignments();
+    fetchAssessments();
     fetchCourses();
   }, []);
 
-  const fetchAssignments = async () => {
+  const fetchAssessments = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/cobotKidsKenya/assignments');
+      setLoading(prev => ({ ...prev, assessments: true }));
+      setError(prev => ({ ...prev, assessments: null }));
+      
+      const response = await fetch(`${API_BASE}/assessments`);
       const data = await response.json();
       
       if (data.success) {
-        setAssignments(data.data);
+        // Combine assignments and exams into a single assessments array
+        const allAssessments = [
+          ...data.data.assignments.map(a => ({ ...a, type: 'assignment' })),
+          ...data.data.exams.map(e => ({ ...e, type: 'exam' }))
+        ];
+        setAssessments(allAssessments);
       } else {
-        setError(data.error);
+        setError(prev => ({ ...prev, assessments: data.error }));
       }
     } catch (err) {
-      setError('Failed to fetch assignments');
+      setError(prev => ({ ...prev, assessments: 'Failed to fetch assessments' }));
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, assessments: false }));
     }
   };
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/cobotKidsKenya/courses');
+      setLoading(prev => ({ ...prev, courses: true }));
+      setError(prev => ({ ...prev, courses: null }));
+      
+      const response = await fetch(`${API_BASE}/courses`);
       const data = await response.json();
       
-      if (data.success) {
-        setCourses(data.data);
+      // Check if the response structure matches the second example
+      if (Array.isArray(data)) {
+        // Response is an array of courses (like in the second example)
+        setCourses(data);
+      } else if (data.success) {
+        // Response has a success property with data array
+        setCourses(data.data || []);
+      } else {
+        setError(prev => ({ ...prev, courses: data.error || 'Invalid response format' }));
       }
     } catch (err) {
+      setError(prev => ({ ...prev, courses: 'Failed to fetch courses' }));
       console.error('Failed to fetch courses:', err);
+    } finally {
+      setLoading(prev => ({ ...prev, courses: false }));
     }
   };
 
   const fetchTopics = async (courseId) => {
-    if (!courseId) return;
+    if (!courseId) {
+      setTopics([]);
+      return;
+    }
     
     try {
-      const response = await fetch(`/cobotKidsKenya/courses/${courseId}`);
+      setLoading(prev => ({ ...prev, topics: true }));
+      setError(prev => ({ ...prev, topics: null }));
+      
+      const response = await fetch(`${API_BASE}/courses/${courseId}/topics`);
       const data = await response.json();
       
       if (data.success) {
-        setTopics(data.data.topics || []);
+        setTopics(data.data || []);
+      } else {
+        setError(prev => ({ ...prev, topics: data.error }));
       }
     } catch (err) {
-      console.error('Failed to fetch topics:', err);
+      setError(prev => ({ ...prev, topics: 'Failed to fetch topics' }));
+    } finally {
+      setLoading(prev => ({ ...prev, topics: false }));
     }
   };
 
+  // Rest of the component remains the same...
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingAssignment 
-        ? `/cobotKidsKenya/assignments/${editingAssignment._id}`
-        : '/cobotKidsKenya/assignments';
+      const endpoint = assessmentType === 'assignment' ? 'assignments' : 'exams';
+      const url = editingAssessment 
+        ? `${API_BASE}/${endpoint}/${editingAssessment._id}`
+        : `${API_BASE}/${endpoint}`;
       
-      const method = editingAssignment ? 'PUT' : 'POST';
+      const method = editingAssessment ? 'PUT' : 'POST';
       
+      // Prepare payload based on assessment type
+      const payload = {
+        title: formData.title,
+        course: formData.course,
+        topic: formData.topic,
+        duration: formData.duration,
+        totalPoints: formData.totalPoints,
+        status: formData.status,
+        questions: [], // Will be added separately
+        ...(assessmentType === 'assignment' ? {
+          description: formData.description,
+          dueDate: formData.dueDate,
+          allowLateSubmission: formData.allowLateSubmission,
+          maxAttempts: formData.maxAttempts,
+          autoGrade: formData.autoGrade,
+          showResults: formData.showResults
+        } : {
+          code: formData.code,
+          scheduledAt: formData.scheduledAt
+        })
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
       
       if (data.success) {
         setShowForm(false);
-        setEditingAssignment(null);
+        setEditingAssessment(null);
         resetForm();
-        fetchAssignments();
+        fetchAssessments();
       } else {
-        setError(data.error);
+        setError(prev => ({ ...prev, assessments: data.error }));
       }
     } catch (err) {
-      setError('Failed to save assignment');
+      setError(prev => ({ ...prev, assessments: 'Failed to save assessment' }));
     }
   };
 
-  const handleEdit = (assignment) => {
-    setEditingAssignment(assignment);
+  const handleEdit = (assessment) => {
+    setEditingAssessment(assessment);
+    setAssessmentType(assessment.type);
     setFormData({
-      title: assignment.title,
-      description: assignment.description,
-      course: assignment.course,
-      topic: assignment.topic,
-      subject: assignment.subject,
-      class: assignment.class,
-      dueDate: assignment.dueDate.split('T')[0],
-      totalPoints: assignment.totalPoints,
-      instructions: assignment.instructions,
-      duration: assignment.duration || 60,
-      allowLateSubmission: assignment.allowLateSubmission || false,
-      maxAttempts: assignment.maxAttempts || 1,
-      autoGrade: assignment.autoGrade || false,
-      showResults: assignment.showResults !== false,
-      status: assignment.status
+      title: assessment.title,
+      description: assessment.description || '',
+      course: assessment.course,
+      topic: assessment.topic,
+      subject: assessment.subject || '',
+      class: assessment.class || '',
+      dueDate: assessment.dueDate ? assessment.dueDate.split('T')[0] : '',
+      totalPoints: assessment.totalPoints,
+      instructions: assessment.instructions || '',
+      duration: assessment.duration || 60,
+      allowLateSubmission: assessment.allowLateSubmission || false,
+      maxAttempts: assessment.maxAttempts || 1,
+      autoGrade: assessment.autoGrade || false,
+      showResults: assessment.showResults !== false,
+      status: assessment.status,
+      // Exam-specific fields
+      code: assessment.code || '',
+      scheduledAt: assessment.scheduledAt ? assessment.scheduledAt.split('T')[0] : ''
     });
     setShowForm(true);
   };
 
-  const handleDelete = async (assignmentId) => {
-    if (window.confirm('Are you sure you want to delete this assignment?')) {
+  const handleDelete = async (assessmentId, type) => {
+    if (window.confirm('Are you sure you want to delete this assessment?')) {
       try {
-        const response = await fetch(`/cobotKidsKenya/assignments/${assignmentId}`, {
+        const endpoint = type === 'assignment' ? 'assignments' : 'exams';
+        const response = await fetch(`${API_BASE}/${endpoint}/${assessmentId}`, {
           method: 'DELETE',
         });
 
         const data = await response.json();
         
         if (data.success) {
-          fetchAssignments();
+          fetchAssessments();
         } else {
-          setError(data.error);
+          setError(prev => ({ ...prev, assessments: data.error }));
         }
       } catch (err) {
-        setError('Failed to delete assignment');
+        setError(prev => ({ ...prev, assessments: 'Failed to delete assessment' }));
       }
     }
   };
@@ -171,7 +244,9 @@ const AssignmentsPage = () => {
       maxAttempts: 1,
       autoGrade: false,
       showResults: true,
-      status: 'draft'
+      status: 'draft',
+      code: '',
+      scheduledAt: ''
     });
   };
 
@@ -189,11 +264,11 @@ const AssignmentsPage = () => {
     return new Date() > new Date(dueDate);
   };
 
-  if (loading) {
+  if (loading.assessments) {
     return (
       <div className="assignments-loading">
         <div className="loading-spinner"></div>
-        <p>Loading assignments...</p>
+        <p>Loading assessments...</p>
       </div>
     );
   }
@@ -201,35 +276,83 @@ const AssignmentsPage = () => {
   return (
     <div className="assignments-management">
       <div className="assignments-header">
-        <h1>Assignment Management</h1>
-        <p>Create and manage assignments for your courses and topics</p>
+        <h1>Assessment Management</h1>
+        <p>Create and manage assessments (assignments and exams) for your courses</p>
+        <div className="assessment-type-buttons">
+          <button 
+            className={`type-btn ${assessmentType === 'assignment' ? 'active' : ''}`}
+            onClick={() => setAssessmentType('assignment')}
+          >
+            Assignments
+          </button>
+          <button 
+            className={`type-btn ${assessmentType === 'exam' ? 'active' : ''}`}
+            onClick={() => setAssessmentType('exam')}
+          >
+            Exams
+          </button>
+        </div>
         <button 
           className="add-assignment-btn"
           onClick={() => setShowForm(true)}
         >
           <i className="fas fa-plus"></i>
-          Create New Assignment
+          Create New {assessmentType === 'assignment' ? 'Assignment' : 'Exam'}
         </button>
       </div>
 
-      {error && (
-        <div className="error-message">
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
-        </div>
-      )}
+ {Object.values(error).some(err => err) && (
+  <div className="error-messages">
+    {error.assessments && (
+      <div className="error-message">
+        <span>Assessments: {error.assessments}</span>
+        <button
+          onClick={() =>
+            setError(prev => ({ ...prev, assessments: null }))
+          }
+        >
+          &times;
+        </button>
+      </div>
+    )}
+    {error.courses && (
+      <div className="error-message">
+        <span>Courses: {error.courses}</span>
+        <button
+          onClick={() =>
+            setError(prev => ({ ...prev, courses: null }))
+          }
+        >
+          &times;
+        </button>
+      </div>
+    )}
+    {error.topics && (
+      <div className="error-message">
+        <span>Topics: {error.topics}</span>
+        <button
+          onClick={() =>
+            setError(prev => ({ ...prev, topics: null }))
+          }
+        >
+          &times;
+        </button>
+      </div>
+    )}
+  </div>
+)}
 
-      {/* Assignment Form Modal */}
+      {/* Assessment Form Modal */}
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-content large">
             <div className="modal-header">
-              <h2>{editingAssignment ? 'Edit Assignment' : 'Create New Assignment'}</h2>
+              <h2>{editingAssessment ? `Edit ${assessmentType === 'assignment' ? 'Assignment' : 'Exam'}` : `Create New ${assessmentType === 'assignment' ? 'Assignment' : 'Exam'}`}</h2>
               <button 
                 className="close-btn"
                 onClick={() => {
                   setShowForm(false);
-                  setEditingAssignment(null);
+                  setEditingAssessment(null);
                   resetForm();
                 }}
               >
@@ -240,28 +363,44 @@ const AssignmentsPage = () => {
             <form className="assignment-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Assignment Title *</label>
+                  <label>Title *</label>
                   <input
                     type="text"
                     className="form-input"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     required
-                    placeholder="Enter assignment title"
+                    placeholder={`Enter ${assessmentType === 'assignment' ? 'assignment' : 'exam'} title`}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Subject *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    required
-                    placeholder="e.g., Mathematics, Science"
-                  />
-                </div>
+                {assessmentType === 'exam' && (
+                  <div className="form-group">
+                    <label>Exam Code *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.code}
+                      onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
+                      required
+                      placeholder="Enter exam code (e.g., MATH101)"
+                    />
+                  </div>
+                )}
               </div>
+
+              {assessmentType === 'assignment' && (
+                <div className="form-group">
+                  <label>Description *</label>
+                  <textarea
+                    className="form-textarea"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    required
+                    placeholder="Describe the assessment requirements..."
+                    rows="4"
+                  />
+                </div>
+              )}
 
               <div className="form-row">
                 <div className="form-group">
@@ -275,13 +414,14 @@ const AssignmentsPage = () => {
                     }}
                     required
                   >
-                    <option value="">Select Course</option>
+                    <option value="">Choose a course</option>
                     {courses.map(course => (
                       <option key={course._id} value={course._id}>
-                        {course.courseName}
+                        {course.courseName} ({course.code})
                       </option>
                     ))}
                   </select>
+                  {loading.courses && <div className="loading-indicator">Loading courses...</div>}
                 </div>
                 <div className="form-group">
                   <label>Topic *</label>
@@ -290,7 +430,7 @@ const AssignmentsPage = () => {
                     value={formData.topic}
                     onChange={(e) => setFormData({...formData, topic: e.target.value})}
                     required
-                    disabled={!formData.course}
+                    disabled={!formData.course || loading.topics}
                   >
                     <option value="">Select Topic</option>
                     {topics.map(topic => (
@@ -299,29 +439,21 @@ const AssignmentsPage = () => {
                       </option>
                     ))}
                   </select>
+                  {loading.topics && <div className="loading-indicator">Loading topics...</div>}
                 </div>
-              </div>
-
-              <div className="form-group">
-                <label>Description *</label>
-                <textarea
-                  className="form-textarea"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  required
-                  placeholder="Describe the assignment requirements..."
-                  rows="4"
-                />
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Due Date *</label>
+                  <label>{assessmentType === 'assignment' ? 'Due Date' : 'Scheduled Date'} *</label>
                   <input
                     type="datetime-local"
                     className="form-input"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                    value={assessmentType === 'assignment' ? formData.dueDate : formData.scheduledAt}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      [assessmentType === 'assignment' ? 'dueDate' : 'scheduledAt']: e.target.value
+                    })}
                     required
                   />
                 </div>
@@ -351,55 +483,74 @@ const AssignmentsPage = () => {
                     placeholder="60"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Max Attempts</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.maxAttempts}
-                    onChange={(e) => setFormData({...formData, maxAttempts: e.target.value})}
-                    min="1"
-                    placeholder="1"
-                  />
-                </div>
+                {assessmentType === 'assignment' && (
+                  <div className="form-group">
+                    <label>Max Attempts</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.maxAttempts}
+                      onChange={(e) => setFormData({...formData, maxAttempts: e.target.value})}
+                      min="1"
+                      placeholder="1"
+                    />
+                  </div>
+                )}
               </div>
+
+              {assessmentType === 'assignment' && (
+                <>
+                  <div className="form-group">
+                    <label>Instructions</label>
+                    <textarea
+                      className="form-textarea"
+                      value={formData.instructions}
+                      onChange={(e) => setFormData({...formData, instructions: e.target.value})}
+                      placeholder="Additional instructions for students..."
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-options">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowLateSubmission}
+                        onChange={(e) => setFormData({...formData, allowLateSubmission: e.target.checked})}
+                      />
+                      Allow late submissions
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.autoGrade}
+                        onChange={(e) => setFormData({...formData, autoGrade: e.target.checked})}
+                      />
+                      Auto-grade multiple choice questions
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.showResults}
+                        onChange={(e) => setFormData({...formData, showResults: e.target.checked})}
+                      />
+                      Show results to students
+                    </label>
+                  </div>
+                </>
+              )}
 
               <div className="form-group">
-                <label>Instructions</label>
-                <textarea
-                  className="form-textarea"
-                  value={formData.instructions}
-                  onChange={(e) => setFormData({...formData, instructions: e.target.value})}
-                  placeholder="Additional instructions for students..."
-                  rows="3"
-                />
-              </div>
-
-              <div className="form-options">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.allowLateSubmission}
-                    onChange={(e) => setFormData({...formData, allowLateSubmission: e.target.checked})}
-                  />
-                  Allow late submissions
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.autoGrade}
-                    onChange={(e) => setFormData({...formData, autoGrade: e.target.checked})}
-                  />
-                  Auto-grade multiple choice questions
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.showResults}
-                    onChange={(e) => setFormData({...formData, showResults: e.target.checked})}
-                  />
-                  Show results to students
-                </label>
+                <label>Status</label>
+                <select
+                  className="form-input"
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="active">Active</option>
+                </select>
               </div>
 
               <div className="form-actions">
@@ -408,14 +559,14 @@ const AssignmentsPage = () => {
                   className="cancel-btn"
                   onClick={() => {
                     setShowForm(false);
-                    setEditingAssignment(null);
+                    setEditingAssessment(null);
                     resetForm();
                   }}
                 >
                   Cancel
                 </button>
                 <button type="submit" className="submit-btn">
-                  {editingAssignment ? 'Update Assignment' : 'Create Assignment'}
+                  {editingAssessment ? `Update ${assessmentType === 'assignment' ? 'Assignment' : 'Exam'}` : `Create ${assessmentType === 'assignment' ? 'Assignment' : 'Exam'}`}
                 </button>
               </div>
             </form>
@@ -423,41 +574,46 @@ const AssignmentsPage = () => {
         </div>
       )}
 
-      {/* Assignments List */}
+      {/* Assessments List */}
       <div className="assignments-section">
         <div className="section-header">
-          <h2>All Assignments</h2>
+          <h2>{assessmentType === 'assignment' ? 'Assignments' : 'Exams'}</h2>
           <div className="section-stats">
             <div className="stat-item">
-              <span className="stat-number">{assignments.length}</span>
+              <span className="stat-number">
+                {assessments.filter(a => a.type === assessmentType).length}
+              </span>
               <span className="stat-label">Total</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">
-                {assignments.filter(a => a.status === 'published').length}
+                {assessments.filter(a => a.type === assessmentType && a.status === 'published').length}
               </span>
               <span className="stat-label">Published</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">
-                {assignments.filter(a => a.status === 'active').length}
+                {assessments.filter(a => a.type === assessmentType && a.status === 'active').length}
               </span>
               <span className="stat-label">Active</span>
             </div>
           </div>
         </div>
 
-        {assignments.length > 0 ? (
+        {assessments.filter(a => a.type === assessmentType).length > 0 ? (
           <div className="assignments-grid">
-            {assignments.map((assignment) => (
-              <div key={assignment._id} className="assignment-card">
+            {assessments.filter(a => a.type === assessmentType).map((assessment) => (
+              <div key={assessment._id} className="assignment-card">
                 <div className="assignment-header">
-                  <h3>{assignment.title}</h3>
+                  <h3>{assessment.title}</h3>
+                  {assessment.type === 'exam' && assessment.code && (
+                    <span className="exam-code">{assessment.code}</span>
+                  )}
                   <div className="assignment-actions">
                     <button 
                       className="action-btn primary"
                       onClick={() => {
-                        setSelectedAssignment(assignment);
+                        setSelectedAssessment(assessment);
                         setShowQuestionsModal(true);
                       }}
                     >
@@ -467,7 +623,7 @@ const AssignmentsPage = () => {
                     <button 
                       className="action-btn primary"
                       onClick={() => {
-                        setSelectedAssignment(assignment);
+                        setSelectedAssessment(assessment);
                         setShowResultsModal(true);
                       }}
                     >
@@ -476,14 +632,14 @@ const AssignmentsPage = () => {
                     </button>
                     <button 
                       className="action-btn edit"
-                      onClick={() => handleEdit(assignment)}
+                      onClick={() => handleEdit(assessment)}
                     >
                       <i className="fas fa-edit"></i>
                       Edit
                     </button>
                     <button 
                       className="action-btn delete"
-                      onClick={() => handleDelete(assignment._id)}
+                      onClick={() => handleDelete(assessment._id, assessment.type)}
                     >
                       <i className="fas fa-trash"></i>
                       Delete
@@ -492,47 +648,65 @@ const AssignmentsPage = () => {
                 </div>
                 
                 <div className="assignment-content">
-                  <p className="assignment-description">{assignment.description}</p>
+                  {assessment.description && (
+                    <p className="assignment-description">{assessment.description}</p>
+                  )}
                   
                   <div className="assignment-meta">
                     <div className="meta-row">
                       <span className="meta-item">
                         <i className="fas fa-book"></i>
-                        <strong>Course:</strong> {assignment.course?.courseName || 'N/A'}
+                        <strong>Course:</strong> {assessment.course?.courseName || 'N/A'}
                       </span>
                       <span className="meta-item">
                         <i className="fas fa-tag"></i>
-                        <strong>Topic:</strong> {assignment.topic?.name || 'N/A'}
+                        <strong>Topic:</strong> {assessment.topic?.name || 'N/A'}
                       </span>
                     </div>
                     <div className="meta-row">
                       <span className="meta-item">
                         <i className="fas fa-calendar"></i>
-                        <strong>Due:</strong> {formatDate(assignment.dueDate)}
-                        {isOverdue(assignment.dueDate) && (
+                        <strong>{assessment.type === 'assignment' ? 'Due:' : 'Scheduled:'}</strong> 
+                        {formatDate(assessment.type === 'assignment' ? assessment.dueDate : assessment.scheduledAt)}
+                        {assessment.type === 'assignment' && assessment.dueDate && isOverdue(assessment.dueDate) && (
                           <span className="overdue-badge">Overdue</span>
                         )}
                       </span>
                       <span className="meta-item">
                         <i className="fas fa-star"></i>
-                        <strong>Points:</strong> {assignment.totalPoints}
+                        <strong>Points:</strong> {assessment.totalPoints || 0}
                       </span>
                     </div>
                     <div className="meta-row">
                       <span className="meta-item">
                         <i className="fas fa-users"></i>
-                        <strong>Participants:</strong> {assignment.submissionCount || 0}
+                        <strong>Participants:</strong> 
+                        {assessment.type === 'assignment' ? 
+                          (assessment.attempts?.length || 0) : 
+                          (assessment.attempts?.filter(a => a.status === 'submitted').length || 0)}
                       </span>
                       <span className="meta-item">
                         <i className="fas fa-chart-line"></i>
-                        <strong>Avg Score:</strong> {assignment.averageGrade || 0}%
+                        <strong>Avg Score:</strong> 
+                        {assessment.type === 'assignment' ? 
+                          (assessment.attempts?.length ? 
+                            Math.round(assessment.attempts.reduce((sum, a) => sum + (a.score || 0), 0) / assessment.attempts.length) : 
+                            0) :
+                          (assessment.attempts?.filter(a => a.status === 'graded').length ? 
+                            Math.round(assessment.attempts.filter(a => a.status === 'graded')
+                              .reduce((sum, a) => sum + (a.percentage || 0), 0) / 
+                              assessment.attempts.filter(a => a.status === 'graded').length) : 
+                            0)}%
                       </span>
                     </div>
                   </div>
 
                   <div className="assignment-status">
-                    <span className={`status-badge ${assignment.status}`}>
-                      {assignment.status}
+                    <span className={`status-badge ${assessment.status || 'draft'}`}>
+                      {assessment.status || 'draft'}
+                    </span>
+                    <span className="type-badge">
+                      {assessment.type}
                     </span>
                   </div>
                 </div>
@@ -544,29 +718,29 @@ const AssignmentsPage = () => {
             <div className="no-assignments-icon">
               <i className="fas fa-clipboard-list"></i>
             </div>
-            <h3>No Assignments Yet</h3>
-            <p>Create your first assignment to get started!</p>
+            <h3>No {assessmentType === 'assignment' ? 'Assignments' : 'Exams'} Yet</h3>
+            <p>Create your first {assessmentType === 'assignment' ? 'assignment' : 'exam'} to get started!</p>
             <button 
               className="add-first-assignment-btn"
               onClick={() => setShowForm(true)}
             >
-              Create First Assignment
+              Create First {assessmentType === 'assignment' ? 'Assignment' : 'Exam'}
             </button>
           </div>
         )}
       </div>
 
       {/* Questions Modal */}
-      {showQuestionsModal && selectedAssignment && (
+      {showQuestionsModal && selectedAssessment && (
         <div className="modal-overlay">
           <div className="modal-content large">
             <div className="modal-header">
-              <h2>Questions - {selectedAssignment.title}</h2>
+              <h2>Questions - {selectedAssessment.title}</h2>
               <button 
                 className="close-btn"
                 onClick={() => {
                   setShowQuestionsModal(false);
-                  setSelectedAssignment(null);
+                  setSelectedAssessment(null);
                 }}
               >
                 ×
@@ -574,25 +748,25 @@ const AssignmentsPage = () => {
             </div>
             
             <div className="questions-content">
-              {selectedAssignment.questions && selectedAssignment.questions.length > 0 ? (
+              {selectedAssessment.questions && selectedAssessment.questions.length > 0 ? (
                 <div className="questions-list">
-                  {selectedAssignment.questions.map((question, index) => (
-                    <div key={question._id} className="question-item">
+                  {selectedAssessment.questions.map((question, index) => (
+                    <div key={question._id || index} className="question-item">
                       <div className="question-header">
                         <span className="question-number">Q{index + 1}</span>
-                        <span className="question-type">{question.questionType}</span>
-                        <span className="question-points">{question.points} pts</span>
+                        <span className="question-type">Multiple Choice</span>
+                        <span className="question-points">{question.points || 1} pts</span>
                       </div>
                       <div className="question-text">
-                        {question.questionText}
+                        {question.question}
                       </div>
-                      {question.questionType === 'multiple_choice' && question.options && (
+                      {question.options && (
                         <div className="question-options">
                           {question.options.map((option, optIndex) => (
-                            <div key={optIndex} className={`option ${option.isCorrect ? 'correct' : ''}`}>
+                            <div key={optIndex} className={`option ${option === question.correctAnswer ? 'correct' : ''}`}>
                               <span className="option-letter">{String.fromCharCode(65 + optIndex)}</span>
-                              <span className="option-text">{option.text}</span>
-                              {option.isCorrect && <i className="fas fa-check correct-icon"></i>}
+                              <span className="option-text">{option}</span>
+                              {option === question.correctAnswer && <i className="fas fa-check correct-icon"></i>}
                             </div>
                           ))}
                         </div>
@@ -602,7 +776,7 @@ const AssignmentsPage = () => {
                 </div>
               ) : (
                 <div className="no-questions">
-                  <p>No questions added to this assignment yet.</p>
+                  <p>No questions added to this assessment yet.</p>
                   <button className="add-questions-btn">
                     Add Questions
                   </button>
@@ -614,16 +788,16 @@ const AssignmentsPage = () => {
       )}
 
       {/* Results Modal */}
-      {showResultsModal && selectedAssignment && (
+      {showResultsModal && selectedAssessment && (
         <div className="modal-overlay">
           <div className="modal-content large">
             <div className="modal-header">
-              <h2>Results - {selectedAssignment.title}</h2>
+              <h2>Results - {selectedAssessment.title}</h2>
               <button 
                 className="close-btn"
                 onClick={() => {
                   setShowResultsModal(false);
-                  setSelectedAssignment(null);
+                  setSelectedAssessment(null);
                 }}
               >
                 ×
@@ -635,31 +809,35 @@ const AssignmentsPage = () => {
                 <div className="summary-card">
                   <h3>Participation</h3>
                   <div className="summary-stat">
-                    <span className="stat-number">{selectedAssignment.submissionCount || 0}</span>
+                    <span className="stat-number">
+                      {selectedAssessment.type === 'assignment' ? 
+                        (selectedAssessment.attempts?.length || 0) : 
+                        (selectedAssessment.attempts?.filter(a => a.status === 'submitted').length || 0)}
+                    </span>
                     <span className="stat-label">Total Submissions</span>
-                  </div>
-                  <div className="summary-stat">
-                    <span className="stat-number">{selectedAssignment.completionRate || 0}%</span>
-                    <span className="stat-label">Completion Rate</span>
                   </div>
                 </div>
                 
                 <div className="summary-card">
                   <h3>Performance</h3>
                   <div className="summary-stat">
-                    <span className="stat-number">{selectedAssignment.averageGrade || 0}%</span>
-                    <span className="stat-label">Average Score</span>
-                  </div>
-                  <div className="summary-stat">
                     <span className="stat-number">
-                      {selectedAssignment.submissions?.filter(s => s.percentage >= 80).length || 0}
+                      {selectedAssessment.type === 'assignment' ? 
+                        (selectedAssessment.attempts?.length ? 
+                          Math.round(selectedAssessment.attempts.reduce((sum, a) => sum + a.score, 0) / selectedAssessment.attempts.length) : 
+                          0) :
+                        (selectedAssessment.attempts?.filter(a => a.status === 'graded').length ? 
+                          Math.round(selectedAssessment.attempts.filter(a => a.status === 'graded')
+                            .reduce((sum, a) => sum + a.percentage, 0) / 
+                            selectedAssessment.attempts.filter(a => a.status === 'graded').length) : 
+                          0)}%
                     </span>
-                    <span className="stat-label">High Performers (80%+)</span>
+                    <span className="stat-label">Average Score</span>
                   </div>
                 </div>
               </div>
 
-              {selectedAssignment.submissions && selectedAssignment.submissions.length > 0 ? (
+              {selectedAssessment.attempts && selectedAssessment.attempts.length > 0 ? (
                 <div className="submissions-list">
                   <h3>Student Submissions</h3>
                   <div className="submissions-table">
@@ -670,23 +848,27 @@ const AssignmentsPage = () => {
                       <span>Status</span>
                       <span>Actions</span>
                     </div>
-                    {selectedAssignment.submissions.map((submission) => (
-                      <div key={submission._id} className="table-row">
+                    {selectedAssessment.attempts.map((attempt) => (
+                      <div key={attempt._id} className="table-row">
                         <span className="student-name">
-                          {submission.student?.fname} {submission.student?.lname}
+                          {attempt.student?.fname} {attempt.student?.lname}
                         </span>
                         <span className="submission-date">
-                          {formatDate(submission.submittedAt)}
+                          {attempt.submittedAt ? formatDate(attempt.submittedAt) : 'Not submitted'}
                         </span>
                         <span className="submission-score">
-                          {submission.percentage || 0}%
+                          {selectedAssessment.type === 'assignment' ? 
+                            `${attempt.score || 0}/${selectedAssessment.totalPoints}` : 
+                            `${attempt.percentage || 0}%`}
                         </span>
-                        <span className={`submission-status ${submission.status}`}>
-                          {submission.status}
+                        <span className={`submission-status ${attempt.status}`}>
+                          {attempt.status}
                         </span>
                         <span className="submission-actions">
                           <button className="view-btn">View</button>
-                          <button className="grade-btn">Grade</button>
+                          {selectedAssessment.type === 'exam' && attempt.status !== 'graded' && (
+                            <button className="grade-btn">Grade</button>
+                          )}
                         </span>
                       </div>
                     ))}
@@ -694,7 +876,7 @@ const AssignmentsPage = () => {
                 </div>
               ) : (
                 <div className="no-submissions">
-                  <p>No submissions yet for this assignment.</p>
+                  <p>No submissions wait yet for this assessment.</p>
                 </div>
               )}
             </div>
@@ -705,4 +887,4 @@ const AssignmentsPage = () => {
   );
 };
 
-export default AssignmentsPage;
+export default AssessmentsPage;

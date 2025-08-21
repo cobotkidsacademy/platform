@@ -101,8 +101,11 @@ function StudentProfile() {
       {/* Profile Info */}
       <div className="flex items-center gap-8 p-8 flex-1">
         {/* Profile Pic */}
+        
         <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-sky-400 to-sky-100 flex justify-center items-center shadow-lg cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl">
-          <i className="fas fa-user-astronaut text-6xl text-blue-900"></i>
+          <i className="fas fa-user-astronaut text-6xl text-blue-900">
+            {/* <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyhuMOA9yuJLNoJDGQFL0lfvwwLoF1SBWMJw&s"></img> */}
+          </i>
 
           {/* Upload Indicator */}
           <div className="absolute bottom-2 right-2 w-9 h-9 bg-orange-600 rounded-full flex justify-center items-center text-white shadow-md transition-transform duration-300 hover:scale-110">

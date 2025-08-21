@@ -1,11 +1,3 @@
-require('dotenv').config();
-
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const EmployeeModel = require("./models/EmployeesModel.js");
-const StudentModel = require("./models/StudentModel.js");
-const School = require("./models/School.js"); 
 const Course = require("./models/Course.js"); // Make sure to import your Course model
 const router = express.Router();
 const studentRoutes = require('./routes/studentRoutes');
@@ -2595,7 +2587,571 @@ function calculateGrade(percentage) {
 }
 
 // ===== END EXAM ROUTES ===== //
+// ===== ASSESSMENT ROUTES ===== //
 
+// GET all assessments (both assignments and exams) for a course
+app.get('/cobotKidsKenya/courses/:courseId/assessments', async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course ID format' 
+      });
+    }
+
+    const course = await Course.findById(courseId)
+      .select('assignments exams courseName code');
+    
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    // Combine assignments and exams into a single assessments array
+    const assessments = [
+      ...course.assignments.map(a => ({ ...a.toObject(), type: 'assignment' })),
+      ...course.exams.map(e => ({ ...e.toObject(), type: 'exam' }))
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: assessments
+    });
+
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while fetching assessments' 
+    });
+  }
+});
+
+// GET single assessment (either assignment or exam)
+app.get('/cobotKidsKenya/courses/:courseId/assessments/:assessmentId', async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(courseId) || 
+        !mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course or assessment ID format' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    // Check if it's an assignment
+    const assignment = course.assignments.id(assessmentId);
+    if (assignment) {
+      return res.status(200).json({
+        success: true,
+        data: { ...assignment.toObject(), type: 'assignment' }
+      });
+    }
+
+    // Check if it's an exam
+    const exam = course.exams.id(assessmentId);
+    if (exam) {
+      return res.status(200).json({
+        success: true,
+        data: { ...exam.toObject(), type: 'exam' }
+      });
+    }
+
+    return res.status(404).json({ 
+      success: false,
+      error: 'Assessment not found' 
+    });
+
+  } catch (error) {
+    console.error('Error fetching assessment:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while fetching assessment' 
+    });
+  }
+});
+
+// POST - Create a new assessment (assignment or exam)
+app.post('/cobotKidsKenya/courses/:courseId/assessments', async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { type, title, description, topic, dueDate, duration, totalPoints, 
+            instructions, allowLateSubmission, maxAttempts, autoGrade, showResults,
+            code, scheduledAt } = req.body;
+
+    // Validate input
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course ID format' 
+      });
+    }
+
+    if (!type || !['assignment', 'exam'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Assessment type must be either "assignment" or "exam"' 
+      });
+    }
+
+    if (!title || !duration || !totalPoints) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Title, duration, and totalPoints are required' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    if (type === 'assignment') {
+      // Create new assignment
+      const newAssignment = {
+        title,
+        description: description || '',
+        topic: topic || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        duration: Number(duration),
+        totalPoints: Number(totalPoints),
+        instructions: instructions || '',
+        allowLateSubmission: allowLateSubmission || false,
+        maxAttempts: maxAttempts || 1,
+        autoGrade: autoGrade || false,
+        showResults: showResults !== false,
+        status: 'draft',
+        questions: [],
+        attempts: []
+      };
+
+      course.assignments.push(newAssignment);
+      await course.save();
+
+      const createdAssignment = course.assignments[course.assignments.length - 1];
+      return res.status(201).json({
+        success: true,
+        data: { ...createdAssignment.toObject(), type: 'assignment' }
+      });
+
+    } else { // type === 'exam'
+      // Generate exam code if not provided
+      const examCode = code || `${course.code}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+      // Create new exam
+      const newExam = {
+        title,
+        code: examCode,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        duration: Number(duration),
+        totalPoints: Number(totalPoints),
+        status: 'draft',
+        questions: [],
+        attempts: []
+      };
+
+      course.exams.push(newExam);
+      await course.save();
+
+      const createdExam = course.exams[course.exams.length - 1];
+      return res.status(201).json({
+        success: true,
+        data: { ...createdExam.toObject(), type: 'exam' }
+      });
+    }
+
+  } catch (error) {
+    console.error('Error creating assessment:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while creating assessment' 
+    });
+  }
+});
+
+// PUT - Update an assessment
+app.put('/cobotKidsKenya/courses/:courseId/assessments/:assessmentId', async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    const { type, title, description, topic, dueDate, duration, totalPoints, 
+            instructions, allowLateSubmission, maxAttempts, autoGrade, showResults,
+            code, scheduledAt, status } = req.body;
+
+    // Validate input
+    if (!mongoose.Types.ObjectId.isValid(courseId) || 
+        !mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course or assessment ID format' 
+      });
+    }
+
+    if (!type || !['assignment', 'exam'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Assessment type must be either "assignment" or "exam"' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    if (type === 'assignment') {
+      const assignment = course.assignments.id(assessmentId);
+      if (!assignment) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Assignment not found' 
+        });
+      }
+
+      // Update assignment fields
+      if (title) assignment.title = title;
+      if (description !== undefined) assignment.description = description;
+      if (topic !== undefined) assignment.topic = topic;
+      if (dueDate) assignment.dueDate = new Date(dueDate);
+      if (duration) assignment.duration = Number(duration);
+      if (totalPoints) assignment.totalPoints = Number(totalPoints);
+      if (instructions !== undefined) assignment.instructions = instructions;
+      if (allowLateSubmission !== undefined) assignment.allowLateSubmission = allowLateSubmission;
+      if (maxAttempts) assignment.maxAttempts = maxAttempts;
+      if (autoGrade !== undefined) assignment.autoGrade = autoGrade;
+      if (showResults !== undefined) assignment.showResults = showResults;
+      if (status) assignment.status = status;
+
+      await course.save();
+      return res.status(200).json({
+        success: true,
+        data: { ...assignment.toObject(), type: 'assignment' }
+      });
+
+    } else { // type === 'exam'
+      const exam = course.exams.id(assessmentId);
+      if (!exam) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Exam not found' 
+        });
+      }
+
+      // Update exam fields
+      if (title) exam.title = title;
+      if (code) exam.code = code;
+      if (scheduledAt) exam.scheduledAt = new Date(scheduledAt);
+      if (duration) exam.duration = Number(duration);
+      if (totalPoints) exam.totalPoints = Number(totalPoints);
+      if (status) exam.status = status;
+
+      await course.save();
+      return res.status(200).json({
+        success: true,
+        data: { ...exam.toObject(), type: 'exam' }
+      });
+    }
+
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while updating assessment' 
+    });
+  }
+});
+
+// DELETE - Delete an assessment
+app.delete('/cobotKidsKenya/courses/:courseId/assessments/:assessmentId', async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    const { type } = req.query; // 'assignment' or 'exam'
+
+    // Validate input
+    if (!mongoose.Types.ObjectId.isValid(courseId) || 
+        !mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course or assessment ID format' 
+      });
+    }
+
+    if (!type || !['assignment', 'exam'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Assessment type must be specified (assignment or exam)' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    if (type === 'assignment') {
+      const assignment = course.assignments.id(assessmentId);
+      if (!assignment) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Assignment not found' 
+        });
+      }
+
+      course.assignments.pull(assessmentId);
+      await course.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Assignment deleted successfully'
+      });
+
+    } else { // type === 'exam'
+      const exam = course.exams.id(assessmentId);
+      if (!exam) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Exam not found' 
+        });
+      }
+
+      course.exams.pull(assessmentId);
+      await course.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Exam deleted successfully'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while deleting assessment' 
+    });
+  }
+});
+
+// POST - Add a question to an assessment
+app.post('/cobotKidsKenya/courses/:courseId/assessments/:assessmentId/questions', async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    const { type, question, options, correctAnswer, points } = req.body;
+
+    // Validate input
+    if (!mongoose.Types.ObjectId.isValid(courseId) || 
+        !mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course or assessment ID format' 
+      });
+    }
+
+    if (!type || !['assignment', 'exam'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Assessment type must be specified (assignment or exam)' 
+      });
+    }
+
+    if (!question || !options || !correctAnswer) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Question, options, and correctAnswer are required' 
+      });
+    }
+
+    if (!Array.isArray(options) || options.length !== 4) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Exactly 4 options are required' 
+      });
+    }
+
+    if (!options.includes(correctAnswer)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Correct answer must be one of the options' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    if (type === 'assignment') {
+      const assignment = course.assignments.id(assessmentId);
+      if (!assignment) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Assignment not found' 
+        });
+      }
+
+      // Add question to assignment
+      assignment.questions.push({
+        question,
+        options,
+        correctAnswer,
+        points: points || 1
+      });
+
+      await course.save();
+      const addedQuestion = assignment.questions[assignment.questions.length - 1];
+      return res.status(201).json({
+        success: true,
+        data: addedQuestion
+      });
+
+    } else { // type === 'exam'
+      const exam = course.exams.id(assessmentId);
+      if (!exam) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Exam not found' 
+        });
+      }
+
+      // Add question to exam
+      exam.questions.push({
+        question,
+        options,
+        correctAnswer,
+        points: points || 1
+      });
+
+      await course.save();
+      const addedQuestion = exam.questions[exam.questions.length - 1];
+      return res.status(201).json({
+        success: true,
+        data: addedQuestion
+      });
+    }
+
+  } catch (error) {
+    console.error('Error adding question:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while adding question' 
+    });
+  }
+});
+
+// GET - Get assessment results
+app.get('/cobotKidsKenya/courses/:courseId/assessments/:assessmentId/results', async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    const { type } = req.query; // 'assignment' or 'exam'
+
+    // Validate input
+    if (!mongoose.Types.ObjectId.isValid(courseId) || 
+        !mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid course or assessment ID format' 
+      });
+    }
+
+    if (!type || !['assignment', 'exam'].includes(type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Assessment type must be specified (assignment or exam)' 
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Course not found' 
+      });
+    }
+
+    if (type === 'assignment') {
+      const assignment = course.assignments.id(assessmentId);
+      if (!assignment) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Assignment not found' 
+        });
+      }
+
+      // Calculate statistics
+      const totalAttempts = assignment.attempts.length;
+      const averageScore = totalAttempts > 0 
+        ? assignment.attempts.reduce((sum, a) => sum + a.score, 0) / totalAttempts
+        : 0;
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalAttempts,
+          averageScore,
+          attempts: assignment.attempts
+        }
+      });
+
+    } else { // type === 'exam'
+      const exam = course.exams.id(assessmentId);
+      if (!exam) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Exam not found' 
+        });
+      }
+
+      // Calculate statistics
+      const totalAttempts = exam.attempts.length;
+      const submittedAttempts = exam.attempts.filter(a => a.status === 'submitted' || a.status === 'graded').length;
+      const averageScore = submittedAttempts > 0 
+        ? exam.attempts.filter(a => a.status === 'submitted' || a.status === 'graded')
+            .reduce((sum, a) => sum + a.percentage, 0) / submittedAttempts
+        : 0;
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalAttempts,
+          submittedAttempts,
+          averageScore,
+          attempts: exam.attempts
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error('Error fetching assessment results:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error while fetching assessment results' 
+    });
+  }
+});
+
+// ===== END ASSESSMENT ROUTES ===== //
 
 // Server Start
 const PORT = 3001;

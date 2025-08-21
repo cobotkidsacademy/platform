@@ -77,6 +77,10 @@ const StudentDashBoard = () => {
       const data = await response.json();
 
       if (data.success) {
+        // Optionally store a flag or notify attendance recorded
+        if (data.data?.attendanceRecorded) {
+          console.log('Attendance recorded for lesson:', data.data.lessonId);
+        }
         setShowClassCodeModal(false);
         // Navigate to course details page
         navigate(`/course/${selectedCourse._id}`, {

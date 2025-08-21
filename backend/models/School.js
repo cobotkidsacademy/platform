@@ -20,9 +20,8 @@ const classCodeSchema = new mongoose.Schema({
   deactivatedAt: Date,
   lessonDate: Date,
   lessonId: { type: String, required: true },
-  // Optional references
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-  topicId: { type: mongoose.Schema.Types.ObjectId }, // Topic subdocument id within Course
+  topicId: { type: mongoose.Schema.Types.ObjectId },
   generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Tutor', required: false }
 }, { _id: true, timestamps: false });
 
@@ -62,6 +61,22 @@ const studentSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: [0, 'Points cannot be negative']
+  },
+  profilePicture: {
+    type: String,
+    default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyhuMOA9yuJLNoJDGQFL0lfvwwLoF1SBWMJw&s',
+    trim: true,
+    validate: {
+      validator: function(v) {
+        // Allow empty string or valid image URL
+        if (!v || v.trim() === '') return true;
+        
+        // Basic URL pattern check for common image formats
+        const pattern = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg))(?:[\?].*)?$/i;
+        return pattern.test(v);
+      },
+      message: 'Profile picture must be a valid image URL (PNG, JPG, JPEG, GIF, WEBP, SVG) or empty'
+    }
   }
 }, { _id: true, timestamps: true });
 
@@ -106,7 +121,6 @@ const classSchema = new mongoose.Schema({
     required: true,
     enum: ['Kindergarten', 'Primary', 'Secondary', 'High School']
   },
-  // Courses assigned to this class
   courses: [{
     course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     status: { type: String, enum: ['enrolled', 'locked', 'completed'], default: 'enrolled' },
@@ -121,7 +135,6 @@ const classSchema = new mongoose.Schema({
     type: classScheduleSchema,
     required: false
   },
-  // Track generated class codes (attendance/entry codes)
   classCodes: { type: [classCodeSchema], default: [] },
   tutor: {
     type: mongoose.Schema.Types.ObjectId,
@@ -167,4 +180,4 @@ const schoolSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const School = mongoose.model('School', schoolSchema);
-module.exports = School;
+module.exports = School;  
