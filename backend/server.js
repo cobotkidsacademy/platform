@@ -221,7 +221,6 @@ app.get('/cobotKidsKenya/schools/:schoolId/classes', async (req, res) => {
   }
 });
 
-
 app.delete('/cobotKidsKenya/schools/:schoolId/classes/:classId', async (req, res) => {
   try {
     const { classId } = req.params;
