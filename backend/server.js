@@ -54,7 +54,7 @@ app.post('/cobotKidsKenya/schools', async (req, res) => {
     
     const { name, code, location } = req.body;
 
-    // Validate input
+    // Basic validation
     if (!name || !code) {
       return res.status(400).json({
         success: false,
@@ -71,15 +71,16 @@ app.post('/cobotKidsKenya/schools', async (req, res) => {
       });
     }
 
-    // Create new school with empty classes array
+    // ⭐ TEMPORARY FIX: Create school WITHOUT any classes initially
     const school = new School({
       name: name.trim(),
       code: code.toUpperCase().trim(),
       location: location ? location.trim() : '',
-      classes: [] // Explicitly set empty array
+      classes: undefined, // Don't include classes array at all
+      studentsCount: 0
     });
 
-    console.log('Attempting to save school:', school);
+    console.log('Attempting to save school without classes...');
     await school.save();
 
     console.log('School saved successfully:', school._id);
@@ -89,20 +90,17 @@ app.post('/cobotKidsKenya/schools', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating school:', error);
-    
-    // Handle specific MongoDB errors
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        error: 'School code already exists'
-      });
-    }
+    console.error('FULL ERROR creating school:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack
+    });
     
     res.status(500).json({
       success: false,
-      error: 'Server error',
-      details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+      error: 'Failed to create school',
+      details: process.env.NODE_ENV !== 'production' ? error.message : 'Check server logs'
     });
   }
 });
