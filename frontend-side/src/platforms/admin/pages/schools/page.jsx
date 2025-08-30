@@ -46,7 +46,7 @@ const handleAddSchool = async (e) => {
   setError(null);
   
   try {
-    const response = await fetch('http://localhost:3001/cobotKidsKenya/schools', {
+    const response = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/schools', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
