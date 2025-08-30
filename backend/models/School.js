@@ -1,30 +1,5 @@
 const mongoose = require('mongoose');
 
-// ================== CLASS CODE SCHEMA ==================
-const classCodeSchema = new mongoose.Schema({
-  code: {
-    type: String,
-    required: true,
-    trim: true,
-    match: [/^\d{3}$/, 'Code must be a 3-digit number']
-  },
-  status: {
-    type: String,
-    enum: ['active', 'inactive', 'expired'],
-    default: 'active'
-  },
-  validFrom: Date,
-  validUntil: Date,
-  generatedAt: { type: Date, default: Date.now },
-  activatedAt: Date,
-  deactivatedAt: Date,
-  lessonDate: Date,
-  lessonId: { type: String, required: true },
-  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-  topicId: { type: mongoose.Schema.Types.ObjectId },
-  generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Tutor', required: false }
-}, { _id: true, timestamps: false });
-
 // ================== STUDENT SCHEMA ==================
 const studentSchema = new mongoose.Schema({
   fname: {
@@ -41,15 +16,9 @@ const studentSchema = new mongoose.Schema({
   },
   username: {
     type: String,
-    required: [true, 'Username is required'],
+    unique: true,
     trim: true,
-    lowercase: true,
-    validate: {
-      validator: function(v) {
-        return v && v.length > 0;
-      },
-      message: 'Username cannot be empty'
-    }
+    lowercase: true
   },
   password: {
     type: String,
@@ -62,36 +31,90 @@ const studentSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Points cannot be negative']
   }
-}, { _id: true, timestamps: true });
+}, { 
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
-// ================== CLASS SCHEDULE SCHEMA ==================
-const classScheduleSchema = new mongoose.Schema({
-  dayOfWeek: {
-    type: String,
-    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-    required: false
-  },
-  startTime: {
-    type: String,
-    required: false,
-    validate: {
-      validator: function(v) {
-        return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
-      },
-      message: props => `${props.value} is not a valid time format! Use HH:MM (24-hour format)`
-    }
-  },
-  endTime: {
-    type: String,
-    required: false,
-    validate: {
-      validator: function(v) {
-        return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
-      },
-      message: props => `${props.value} is not a valid time format! Use HH:MM (24-hour format)`
-    }
+// Auto-generate username (SchoolCode-fname.lname)
+studentSchema.pre('save', function(next) {
+  if (!this.username) {
+    const schoolCode = this.parent().parent().code;
+    this.username = `${schoolCode}-${this.fname.toLowerCase()}.${this.lname.toLowerCase()}`;
   }
-}, { _id: false });
+  next();
+});
+
+// ================== CLASS CODE SCHEMA ==================
+const classCodeSchema = new mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'expired'],
+    default: 'active'
+  },
+  validFrom: {
+    type: Date,
+    required: true
+  },
+  validUntil: {
+    type: Date,
+    required: true
+  },
+  generatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Tutor' // Reference to tutor (from Tutor model)
+  },
+  generatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  activatedAt: {
+    type: Date
+  },
+  deactivatedAt: {
+    type: Date
+  },
+  lessonDate: {
+    type: Date,
+    required: true
+  },
+  lessonId: {
+    type: String,
+    required: true,
+    unique: true
+  }
+}, { timestamps: true });
+
+// ================== ATTENDANCE SCHEMA ==================
+const attendanceSchema = new mongoose.Schema({
+  student: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['Present', 'Late', 'Absent'],
+    default: 'Present'
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now
+  },
+  classCodeUsed: {
+    type: String,
+    required: true
+  }
+}, { timestamps: true });
 
 // ================== CLASS SCHEMA ==================
 const classSchema = new mongoose.Schema({
@@ -105,32 +128,37 @@ const classSchema = new mongoose.Schema({
     required: true,
     enum: ['Kindergarten', 'Primary', 'Secondary', 'High School']
   },
+  currentClassCode: {
+    type: classCodeSchema,
+    default: null
+  },
+  classCodes: [{
+    type: classCodeSchema
+  }],
+  schedule: {
+    dayOfWeek: {
+      type: String,
+      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    },
+    startTime: String, // e.g., "09:00"
+    endTime: String   // e.g., "10:30"
+  },
   courses: [{
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     status: { type: String, enum: ['enrolled', 'locked', 'completed'], default: 'enrolled' },
     assignedAt: { type: Date, default: Date.now }
   }],
-  currentClassCode: {
-    type: classCodeSchema,
-    default: null,
-    required: false
-  },
-  schedule: {
-    type: classScheduleSchema,
-    required: false
-  },
-  classCodes: { type: [classCodeSchema], default: [] },
   tutor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tutor',
-    required: false
+    ref: 'Tutor' // Reference to tutor (from Tutor model)
   },
-  students: {
-    type: [studentSchema],
-    default: [],
-    required: false
+  students: [studentSchema],
+  attendance: [attendanceSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, { timestamps: true });
+});
 
 // ================== SCHOOL SCHEMA ===================
 const schoolSchema = new mongoose.Schema({
@@ -148,20 +176,14 @@ const schoolSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: false,
+    required: true,
     trim: true
   },
-  classes: {
-    type: [classSchema],
-    default: [],
-    required: false
-  },
+  classes: [classSchema],
   studentsCount: {
     type: Number,
-    default: 0,
-    required: false
+    default: 0
   }
 }, { timestamps: true });
 
-const School = mongoose.model('School', schoolSchema);
-module.exports = School;  
+module.exports = mongoose.model('Schools', schoolSchema);
