@@ -40,56 +40,46 @@ const SchoolsPage = () => {
     fetchSchools();
   }, []);
 
-  const handleAddSchool = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      // Validate input
-      if (!newSchool.name.trim() || !newSchool.code.trim()) {
-        throw new Error('School name and code are required');
-      }
+const handleAddSchool = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  
+  try {
+    const response = await fetch('http://localhost:3001/cobotKidsKenya/schools', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newSchool),
+    });
 
-      // Check for duplicate school code
-      const existingSchool = schools.find(s => 
-        s.code.toLowerCase() === newSchool.code.trim().toLowerCase()
-      );
-      
-      if (existingSchool) {
-        throw new Error('School code already exists');
-      }
-
-      const response = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/schools', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newSchool.name.trim(),
-          code: newSchool.code.trim().toUpperCase(),
-          location: newSchool.location.trim()
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add school');
-      }
-
-      // Handle the new response format
-      const addedSchool = result.success ? result.data : result;
-      setSchools([...schools, addedSchool]);
-      setNewSchool({ name: '', code: '', location: '' });
-      setShowAddForm(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
+    // Check if response is OK before trying to parse JSON
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server responded with error:', response.status, errorText);
+      throw new Error(`Server error: ${response.status} - ${errorText}`);
     }
-  };
 
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to add school');
+    }
+
+    // Handle the new response format
+    const addedSchool = result.data;
+    setSchools([...schools, addedSchool]);
+    setNewSchool({ name: '', code: '', location: '' });
+    setShowAddForm(false);
+    
+  } catch (err) {
+    console.error('Error in handleAddSchool:', err);
+    setError(err.message || 'Failed to add school. Please check console for details.');
+  } finally {
+    setLoading(false);
+  }
+};
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this school? This action cannot be undone.')) {
       return;
