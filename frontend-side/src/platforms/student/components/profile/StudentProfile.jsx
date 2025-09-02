@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-
-
 import axios from "axios";
 
 function StudentProfile() {
@@ -15,6 +13,8 @@ function StudentProfile() {
     certificates: 0,
   });
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchStudentAndCourseData = async () => {
       try {
@@ -23,7 +23,7 @@ function StudentProfile() {
 
         // Fetch student data
         const studentResponse = await axios.get(
-          `https://platform-zl0a.onrender.com/cobotKidsKenya/students/${studentId}`
+          `${API_URL}/cobotKidsKenya/students/${studentId}`
         );
 
         if (!studentResponse.data.success) {
@@ -36,7 +36,7 @@ function StudentProfile() {
 
         // Fetch all courses from the database
         const coursesResponse = await axios.get(
-          `https://platform-zl0a.onrender.com/cobotKidsKenya/courses`
+          `${API_URL}/cobotKidsKenya/courses`
         );
 
         if (coursesResponse.data.success) {
@@ -72,7 +72,7 @@ function StudentProfile() {
     };
 
     fetchStudentAndCourseData();
-  }, []);
+  }, [API_URL]);
 
   if (loading) {
     return <div className="loading-message">Loading profile...</div>;

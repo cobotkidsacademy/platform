@@ -15,13 +15,14 @@ const SchoolsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   // Fetch schools from backend
   useEffect(() => {
     const fetchSchools = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/schools');
+        const response = await fetch(`${API_URL}/cobotKidsKenya/schools`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,7 +61,7 @@ const SchoolsPage = () => {
         throw new Error('School code already exists');
       }
 
-      const response = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/schools', {
+      const response = await fetch(`${API_URL}/cobotKidsKenya/schools`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +99,7 @@ const SchoolsPage = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${id}`, 
+        `${API_URL}/cobotKidsKenya/schools/${id}`, 
         { method: 'DELETE' }
       );
 
@@ -113,7 +114,6 @@ const SchoolsPage = () => {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="loading-container">

@@ -22,6 +22,8 @@ const ClassesPage = () => {
   const [tutorDetails, setTutorDetails] = useState({});
   const [tutorLoading, setTutorLoading] = useState({});
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Fetch school and its classes
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +31,7 @@ const ClassesPage = () => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}`);
+        const response = await fetch(`${API_URL}/cobotKidsKenya/schools/${schoolId}`);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -53,7 +55,7 @@ const ClassesPage = () => {
     };
 
     fetchData();
-  }, [schoolId]);
+  }, [schoolId, API_URL]);
 
   // Function to fetch tutor details for all classes
   const fetchTutorDetailsForClasses = async (classesList) => {
@@ -71,7 +73,7 @@ const ClassesPage = () => {
       for (const cls of classesList) {
         try {
           const response = await fetch(
-            `https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes/${cls._id}/details`
+            `${API_URL}/cobotKidsKenya/schools/${schoolId}/classes/${cls._id}/details`
           );
           
           if (response.ok) {
@@ -104,7 +106,7 @@ const ClassesPage = () => {
   useEffect(() => {
     const loadCourses = async () => {
       try {
-        const res = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/courses');
+        const res = await fetch(`${API_URL}/cobotKidsKenya/courses`);
         if (!res.ok) return;
         const data = await res.json();
         setCourses(Array.isArray(data) ? data : []);
@@ -113,7 +115,7 @@ const ClassesPage = () => {
       }
     };
     loadCourses();
-  }, []);
+  }, [API_URL]);
 
   // Handle adding a new class
   const handleAddClass = async (e) => {
@@ -123,7 +125,7 @@ const ClassesPage = () => {
     
     try {
       const response = await axios.post(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes`,
+        `${API_URL}/cobotKidsKenya/schools/${schoolId}/classes`,
         {
           name: newClass.name.trim(),
           level: newClass.level
@@ -162,7 +164,7 @@ const ClassesPage = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes/${classId}`,
+        `${API_URL}/cobotKidsKenya/schools/${schoolId}/classes/${classId}`,
         { method: 'DELETE' }
       );
 
@@ -172,7 +174,7 @@ const ClassesPage = () => {
       }
 
       // Refresh the classes list
-      const updatedResponse = await fetch(`https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}`);
+      const updatedResponse = await fetch(`${API_URL}/cobotKidsKenya/schools/${schoolId}`);
       const updatedSchool = await updatedResponse.json();
       setClasses(updatedSchool.classes || []);
       

@@ -15,11 +15,13 @@ const ExamDetailPage = () => {
     points: 1
   });
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const loadExam = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`http://localhost:3001/cobotKidsKenya/courses/${courseId}/exams/${examId}`);
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses/${courseId}/exams/${examId}`);
       const result = await res.json();
       if (!res.ok || result.success === false) {
         throw new Error(result.error || 'Failed to fetch exam');
@@ -39,7 +41,7 @@ const ExamDetailPage = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`http://localhost:3001/cobotKidsKenya/courses/${courseId}/exams/${examId}/questions`, {
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses/${courseId}/exams/${examId}/questions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(questionForm)
@@ -61,7 +63,7 @@ const ExamDetailPage = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`http://localhost:3001/cobotKidsKenya/courses/${courseId}/exams/${examId}/publish`, {
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses/${courseId}/exams/${examId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -78,7 +80,6 @@ const ExamDetailPage = () => {
       setLoading(false);
     }
   };
-
   if (loading && !exam) return <div style={{ padding: 20 }}>Loading...</div>;
   if (error && !exam) return <div style={{ padding: 20, color: '#d32f2f' }}>{error}</div>;
   if (!exam) return null;

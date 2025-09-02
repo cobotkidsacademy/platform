@@ -19,12 +19,14 @@ const StudentDashBoard = () => {
   const [examJoinError, setExamJoinError] = useState("");
   const navigate = useNavigate();
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Fetch courses from backend when component mounts
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const response = await fetch(
-          "https://platform-zl0a.onrender.com/cobotKidsKenya/courses"
+          `${API_URL}/cobotKidsKenya/courses`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,7 +42,7 @@ const StudentDashBoard = () => {
     };
 
     fetchCourses();
-  }, []); // Empty dependency array means this runs once on mount
+  }, [API_URL]); // Added API_URL as dependency
 
   const handleCourseClick = (course) => {
     setSelectedCourse(course);
@@ -60,7 +62,7 @@ const StudentDashBoard = () => {
     try {
       // Verify class code with backend
       const response = await fetch(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/verifyClassCode`,
+        `${API_URL}/cobotKidsKenya/verifyClassCode`,
         {
           method: "POST",
           headers: {
@@ -111,7 +113,7 @@ const StudentDashBoard = () => {
     try {
       // 1) Resolve code to exam
       const res = await fetch(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/exams/code/${encodeURIComponent(
+        `${API_URL}/cobotKidsKenya/exams/code/${encodeURIComponent(
           trimmed
         )}`
       );
@@ -136,7 +138,7 @@ const StudentDashBoard = () => {
         exam.attempts.some((a) => a.student === studentId);
       if (!alreadyRegistered) {
         const regRes = await fetch(
-          `https://platform-zl0a.onrender.com/cobotKidsKenya/exams/${exam._id}/register`,
+          `${API_URL}/cobotKidsKenya/exams/${exam._id}/register`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -159,7 +161,6 @@ const StudentDashBoard = () => {
       setExamJoinError("Failed to join the exam. Please try again.");
     }
   };
-
   if (loading) {
     return (
       <div className="student-dashboard-container">

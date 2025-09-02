@@ -14,12 +14,14 @@ const CourseDetail = () => {
   const [currentOverlay, setCurrentOverlay] = useState(null); // 'notes' or 'assignment'
   const [selectedTopic, setSelectedTopic] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://platform-zl0a.onrender.com/cobotKidsKenya/courses/${courseId}`
+          `${API_URL}/cobotKidsKenya/courses/${courseId}`
         );
         setCourse(response.data);
         setTopics(response.data.topics || []);
@@ -36,7 +38,7 @@ const CourseDetail = () => {
     };
 
     fetchCourseData();
-  }, [courseId]);
+  }, [courseId, API_URL]);
 
   const openNotesOverlay = (topic) => {
     setSelectedTopic(topic);

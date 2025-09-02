@@ -10,6 +10,8 @@ function TutorLoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
+    const API_URL = import.meta.env.VITE_API_URL;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -27,7 +29,7 @@ function TutorLoginPage() {
 
         try {
             const response = await axios.post(
-                "https://platform-zl0a.onrender.com/cobotKidsKenya/tutors/login", 
+                `${API_URL}/cobotKidsKenya/tutors/login`, 
                 { username, password },
                 {
                     headers: {
@@ -76,7 +78,6 @@ function TutorLoginPage() {
             setIsLoading(false);
         }
     };
-
     return (
         <div className="student-login-container">
             <div className="login-form">

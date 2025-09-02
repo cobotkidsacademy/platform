@@ -20,10 +20,12 @@ const AddCoursePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Fetch existing courses
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('https://platform-zl0a.onrender.com/cobotKidsKenya/courses');
+      const response = await axios.get(`${API_URL}/cobotKidsKenya/courses`);
       const sortedCourses = response.data.sort((a, b) => {
         const statusOrder = { completed: 0, enrolled: 1, locked: 2 };
         return statusOrder[a.status] - statusOrder[b.status];
@@ -57,14 +59,14 @@ const AddCoursePage = () => {
       let response;
       if (editingCourse) {
         response = await axios.put(
-          `https://platform-zl0a.onrender.com/cobotKidsKenya/courses/${editingCourse}`,
+          `${API_URL}/cobotKidsKenya/courses/${editingCourse}`,
           courseData
         );
         setCourses(courses.map(c => c._id === editingCourse ? response.data : c));
         setSuccess('Course updated successfully!');
       } else {
         response = await axios.post(
-          'https://platform-zl0a.onrender.com/cobotKidsKenya/courses',
+          `${API_URL}/cobotKidsKenya/courses`,
           courseData
         );
         setCourses([...courses, response.data]);
@@ -108,7 +110,7 @@ const AddCoursePage = () => {
     if (!window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
     
     try {
-      await axios.delete(`https://platform-zl0a.onrender.com/cobotKidsKenya/courses/${courseId}`);
+      await axios.delete(`${API_URL}/cobotKidsKenya/courses/${courseId}`);
       setCourses(courses.filter(c => c._id !== courseId));
       setSuccess('Course deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);
