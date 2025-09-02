@@ -124,7 +124,7 @@ function StudentProfile() {
             {studentData.fname} {studentData.lname}
           </h4>
           <h5 className="text-orange-500 font-semibold inline-block mt-2 mb-4 px-3 py-1 bg-orange-100 rounded-md">
-           <strong>Class  {studentData.className || "Class Not Available"}</strong>
+           Class : {studentData.className || "Class Not Available"}
           </h5>
           <p className="text-orange-700 font-semibold leading-relaxed mb-6 max-w-md">
             <strong>School:</strong> {studentData.schoolName || "N/A"} <br />
