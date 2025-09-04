@@ -4,6 +4,11 @@ import StudentProfile from "../components/profile/StudentProfile";
 import ComingSoon from "../../../components/comingSoon/ComingSoon";
 import Header from "../components/header/Header";
 import { useNavigate } from "react-router-dom";
+import Card from "@mui/material/Card";
+import CardMedia from "@mui/material/CardMedia";
+import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
 
 const StudentDashBoard = () => {
   const [activeTab, setActiveTab] = useState("courses");
@@ -25,9 +30,7 @@ const StudentDashBoard = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/cobotKidsKenya/courses`
-        );
+        const response = await fetch(`${API_URL}/cobotKidsKenya/courses`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -81,7 +84,7 @@ const StudentDashBoard = () => {
       if (data.success) {
         // Optionally store a flag or notify attendance recorded
         if (data.data?.attendanceRecorded) {
-          console.log('Attendance recorded for lesson:', data.data.lessonId);
+          console.log("Attendance recorded for lesson:", data.data.lessonId);
         }
         setShowClassCodeModal(false);
         // Navigate to course details page
@@ -113,9 +116,7 @@ const StudentDashBoard = () => {
     try {
       // 1) Resolve code to exam
       const res = await fetch(
-        `${API_URL}/cobotKidsKenya/exams/code/${encodeURIComponent(
-          trimmed
-        )}`
+        `${API_URL}/cobotKidsKenya/exams/code/${encodeURIComponent(trimmed)}`
       );
       const data = await res.json();
       if (!data.success) {
@@ -269,34 +270,29 @@ const StudentDashBoard = () => {
           {/* Courses Tab */}
           <div className="student-courses-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 auto-rows-fr">
             {courses.map((course) => (
-              <div
-                key={course._id || course.id}
+               <Card
+             key={course._id || course.id}
                 onClick={() => handleCourseClick(course)}
-                className="bg-white shadow-md rounded-2xl h-aouto  flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300 
-                 animate-[wiggle_3s_ease-in-out_infinite]"
-              >
-                {/* Status badge */}
-                <span>{course.status}</span>
-                {/* Course image */}
-                <img
-                  src={course.courseIcon}
-                  alt={course.courseName}
-                  className="w-100% h-50% object-contain mb-4 rounded-t-lg "
-                />
-                <br />
-                <div class="flex gap-10 mt-auto ">
-                  {/* Course name */}
-                  <p class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-red">
-                    {course.courseName}
-                  </p>
-                  {/* Badges */}
-                  <div className="flex gap-2 mt-3 justify-center">
-                    {/* Code badge */}
-                    <span className="back-btn">{course.code}</span>
-                  </div>
-                </div>
-              </div>
+              sx={{ maxWidth: 345 }}
+              className="animate-[wiggle_3s_ease-in-out_infinite]"
+            >
+              <Button variant="outlined">{course.status}</Button>
+
+              <CardMedia
+                component="img"
+                height="194"
+                image={course.courseIcon}
+                alt={course.courseName}
+                className="rounded-t-lg "
+              />
+              <CardContent>
+                <Button variant="text"> {course.courseName}</Button>
+                <Button variant="contained">{course.code}</Button>
+              </CardContent>
+              <CardActions disableSpacing></CardActions>
+            </Card>
             ))}
+           
           </div>
 
           <style>
@@ -318,9 +314,7 @@ const StudentDashBoard = () => {
             <div className="challenges-section">
               <h2>Current Challenges</h2>
               <div className="challenges-list">
-               
-                  <ComingSoon />
-                
+                <ComingSoon />
               </div>
             </div>
           )}

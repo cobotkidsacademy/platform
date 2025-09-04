@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Box from "@mui/material/Box";
+import Fab from "@mui/material/Fab";
+import { styled } from "@mui/material/styles";
+import Paper from "@mui/material/Paper";
+import Grid from "@mui/material/Grid";
 
 function StudentProfile() {
   const [studentData, setStudentData] = useState(null);
@@ -12,6 +17,17 @@ function StudentProfile() {
     inProgress: 0,
     certificates: 0,
   });
+
+  const Item = styled(Paper)(({ theme }) => ({
+    backgroundColor: "#fff",
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    textAlign: "center",
+    color: (theme.vars ?? theme).palette.text.secondary,
+    ...theme.applyStyles("dark", {
+      backgroundColor: "#1A2027",
+    }),
+  }));
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -101,7 +117,7 @@ function StudentProfile() {
       {/* Profile Info */}
       <div className="flex items-center gap-8 p-8 flex-1">
         {/* Profile Pic */}
-        
+
         <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-sky-400 to-sky-100 flex justify-center items-center shadow-lg cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl">
           <i className="fas fa-user-astronaut text-6xl text-blue-900">
             {/* <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyhuMOA9yuJLNoJDGQFL0lfvwwLoF1SBWMJw&s"></img> */}
@@ -124,7 +140,7 @@ function StudentProfile() {
             {studentData.fname} {studentData.lname}
           </h4>
           <h5 className="text-orange-500 font-semibold inline-block mt-2 mb-4 px-3 py-1 bg-orange-100 rounded-md">
-           Class : {studentData.className || "Class Not Available"}
+            Class : {studentData.className || "Class Not Available"}
           </h5>
           <p className="text-orange-700 font-semibold leading-relaxed mb-6 max-w-md">
             <strong>School:</strong> {studentData.schoolName || "N/A"} <br />
@@ -132,63 +148,83 @@ function StudentProfile() {
           </p>
 
           {/* Stats */}
-          <div className="flex flex-wrap gap-4 mt-4">
-            <span className="flex items-center justify-center gap-3 text-base font-bold text-white bg-blue-600 px-6 py-4 rounded-lg shadow-md transition-all hover:-translate-y-1 h-14 w-36">
-              <i className="fas fa-star text-lg"></i>
-              <span className="px-1">{studentData.points || 0}</span>
-              <span>Points</span>
-            </span>
-            <span className="flex items-center justify-center gap-3 text-base font-bold text-white bg-blue-600 px-6 py-4 rounded-lg shadow-md transition-all hover:-translate-y-1 h-14 w-36">
-              <i className="fas fa-calendar-alt text-lg"></i>
+          <Box sx={{ "& > :not(style)": { m: 1 } }}>
+            <Fab variant="extended">Points: {studentData.points || 0}</Fab>
+            <Fab variant="extended">
+              {" "}
               Joined {new Date(studentData.createdAt).toLocaleDateString()}
-            </span>
-            <span className="flex items-center justify-center gap-3 text-base font-bold text-white bg-blue-600 px-6 py-4 rounded-lg shadow-md transition-all hover:-translate-y-1 h-14 w-36">
-              <i className="fas fa-calendar-check text-lg"></i>
-              Attendance: {calculateAttendance()}
-            </span>
-            {studentData.performance && (
-              <span className="flex items-center justify-center gap-3 text-base font-bold text-white bg-blue-600 px-6 py-4 rounded-lg shadow-md transition-all hover:-translate-y-1 h-14 w-36">
-                <i className="fas fa-chart-line text-lg"></i>
-                Performance: {studentData.performance}
-              </span>
-            )}
-          </div>
+            </Fab>
+            <Fab variant="extended">Performance: {studentData.performance}</Fab>
+            <Fab variant="extended">Attendance: {calculateAttendance()}</Fab>
+          </Box>
         </div>
       </div>
 
       {/* Courses Profile */}
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 p-6 w-full md:w-auto">
-        <div className="text-center p-6 bg-gradient-to-br from-blue-700 to-orange-500 rounded-xl cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-1 h-[106px] w-[160px]">
-      <h1 className="text-white text-3xl font-bold">{courseStats.total}</h1>
-      <h4 className="mt-2 text-white/90 uppercase tracking-wide text-sm font-medium">
-        Total Courses
-      </h4>
-    </div>
-        <div className="text-center p-6 bg-gradient-to-br from-blue-700 to-orange-500 rounded-xl cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-1 h-[106px] w-[160px]">
-          <h1 className="text-white text-3xl font-bold">
-            {courseStats.completed}
-          </h1>
-          <h4 className="mt-2 text-white/90 uppercase tracking-wide text-sm font-medium">
-            Completed
-          </h4>
-        </div>
-        <div className="text-center p-6 bg-gradient-to-br from-blue-700 to-orange-500 rounded-xl cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-1 h-[106px] w-[160px]">
-          <h1 className="text-white text-3xl font-bold">
-            {courseStats.inProgress}
-          </h1>
-          <h4 className="mt-2 text-white/90 uppercase tracking-wide text-sm font-medium">
-            In Progress
-          </h4>
-        </div>
-        <div className="text-center p-6 bg-gradient-to-br from-blue-700 to-orange-500 rounded-xl cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-1 h-[106px] w-[160px]">
-          <h1 className="text-white text-3xl font-bold">
-            {courseStats.certificates}
-          </h1>
-          <h4 className="mt-2 text-white/90 uppercase tracking-wide text-sm font-medium">
-            Certificates
-          </h4>
-        </div>
-      </div>
+      <Box sx={{ flexGrow: 1 }}>
+        <Grid container spacing={2}>
+          <Grid size={8}>
+            <Item
+              sx={{
+                height: 70,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+              }}
+            >
+              {" "}
+              Total Courses
+            </Item>
+          </Grid>
+          <Grid size={4}>
+            <Item
+              sx={{
+                height: 70,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+              }}
+            >
+              {" "}
+              {courseStats.completed} Completed
+            </Item>
+          </Grid>
+          <Grid size={4}>
+            <Item
+              sx={{
+                height: 70,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+              }}
+            >
+              {" "}
+              {courseStats.inProgress} In Progress
+            </Item>
+          </Grid>
+          <Grid size={8}>
+            <Item
+              sx={{
+                height: 70,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+              }}
+            >
+              {" "}
+              {courseStats.certificates} Certificates
+            </Item>
+          </Grid>
+        </Grid>
+      </Box>
     </div>
   );
 }
