@@ -5,7 +5,7 @@ import Fab from "@mui/material/Fab";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-
+import Button from '@mui/material/Button';
 function StudentProfile() {
   const [studentData, setStudentData] = useState(null);
   const [courseData, setCourseData] = useState([]);
@@ -167,6 +167,9 @@ function StudentProfile() {
             <Item
               sx={{
                 height: 70,
+                 paddingTop:3,
+                 color:"white",
+                fontSize:20,
                 borderRadius: 1,
                 bgcolor: "primary.main",
                 "&:hover": {
@@ -182,6 +185,9 @@ function StudentProfile() {
             <Item
               sx={{
                 height: 70,
+                 paddingTop:3,
+                 color:"white",
+                fontSize:20,
                 borderRadius: 1,
                 bgcolor: "primary.main",
                 "&:hover": {
@@ -197,6 +203,9 @@ function StudentProfile() {
             <Item
               sx={{
                 height: 70,
+                 paddingTop:3,
+                 color:"white",
+                fontSize:20,
                 borderRadius: 1,
                 bgcolor: "primary.main",
                 "&:hover": {
@@ -212,6 +221,9 @@ function StudentProfile() {
             <Item
               sx={{
                 height: 70,
+                color:"white",
+                paddingTop:3,
+                fontSize:20,
                 borderRadius: 1,
                 bgcolor: "primary.main",
                 "&:hover": {
