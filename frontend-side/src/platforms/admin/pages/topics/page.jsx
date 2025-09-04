@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Topics.css';
 
-const API_BASE = 'https://platform-zl0a.onrender.com/cobotKidsKenya/courses';
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/cobotKidsKenya/courses` : 'https://platform-zl0a.onrender.com/cobotKidsKenya/courses';
 
 export default function CourseTopicsPage() {
   const [courses, setCourses] = useState([]);
@@ -162,7 +162,7 @@ export default function CourseTopicsPage() {
       const topicsResponse = await axios.get(`${API_BASE}/${selectedCourseId}/topics`);
       if (topicsResponse.data.success) {
         setTopics(topicsResponse.data.data || []);
-      }
+        }
     } catch (err) {
       console.error("Failed to delete topic:", err);
       setError(prev => ({ ...prev, topics: 'Failed to delete topic' }));

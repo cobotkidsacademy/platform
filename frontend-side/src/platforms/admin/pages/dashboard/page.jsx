@@ -11,17 +11,19 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         
         // Fetch schools
-        const schoolsResponse = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/schools');
+        const schoolsResponse = await fetch(`${API_URL}/cobotKidsKenya/schools`);
         const schools = await schoolsResponse.json();
         
         // Fetch courses
-        const coursesResponse = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/courses');
+        const coursesResponse = await fetch(`${API_URL}/cobotKidsKenya/courses`);
         const courses = await coursesResponse.json();
         
         // Calculate stats
@@ -49,7 +51,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [API_URL]);
 
   if (loading) {
     return (

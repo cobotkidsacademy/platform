@@ -1,0 +1,31 @@
+        /* Custom class for the logo */
+        .custom-logo {
+             width: 100px;
+            height: auto;
+            display: block;
+            margin: 0; /* Remove auto margin */
+            transition: all 0.3s ease;
+            float: left; /* Float to the left */
+            margin-right: 1px; /* Add some space to the right */
+        }
+        
+        /* Optional hover effect */
+        .custom-logo:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .custom-logo {
+                width: 150px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .custom-logo {
+                width: 120px;
+            }
+        }
+        
+        /* Demo styling */

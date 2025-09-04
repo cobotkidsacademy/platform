@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Assignments.css';
 
-const API_BASE = 'https://platform-zl0a.onrender.com/cobotKidsKenya';
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/cobotKidsKenya` : 'https://platform-zl0a.onrender.com/cobotKidsKenya';
 
 const AssessmentsPage = () => {
   const [assessments, setAssessments] = useState([]);
@@ -876,7 +876,7 @@ const AssessmentsPage = () => {
                 </div>
               ) : (
                 <div className="no-submissions">
-                  <p>No submissions wait yet for this assessment.</p>
+                  <p>No submissions yet for this assessment.</p>
                 </div>
               )}
             </div>

@@ -61,22 +61,6 @@ const studentSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: [0, 'Points cannot be negative']
-  },
-  profilePicture: {
-    type: String,
-    default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyhuMOA9yuJLNoJDGQFL0lfvwwLoF1SBWMJw&s',
-    trim: true,
-    validate: {
-      validator: function(v) {
-        // Allow empty string or valid image URL
-        if (!v || v.trim() === '') return true;
-        
-        // Basic URL pattern check for common image formats
-        const pattern = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg))(?:[\?].*)?$/i;
-        return pattern.test(v);
-      },
-      message: 'Profile picture must be a valid image URL (PNG, JPG, JPEG, GIF, WEBP, SVG) or empty'
-    }
   }
 }, { _id: true, timestamps: true });
 

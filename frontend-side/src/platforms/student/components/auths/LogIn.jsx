@@ -1,8 +1,10 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./StudentAuth.css";
+
+// Get API URL from environment variable with fallback
+const API_BASE_URL = import.meta.env.VITE_API_URL ;
 
 function LogIn() {
   const [userName, setUserName] = useState("");
@@ -69,55 +71,56 @@ function LogIn() {
   }, [userName]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateUsername(userName)) {
-    setUsernameError("Please enter a valid username in format: abc-firstname.lastname");
-    return;
-  }
-  
-  setLoading(true);
-  setError('');
-
-  try {
-    const response = await axios.post('https://platform-zl0a.onrender.com/cobotKidsKenya/students/login', {
-      userName,
-      password
-    });
-
-    if (response.data.success) {
-      // Store both student and class information
-      localStorage.setItem('studentId', response.data.data.student.id);
-      localStorage.setItem('classId', response.data.data.class.id);
-      
-      // Optional: Store the entire class object if needed
-      localStorage.setItem('classInfo', JSON.stringify(response.data.data.class));
-      
-      // Store school info if needed
-      localStorage.setItem('schoolInfo', JSON.stringify(response.data.data.school));
-      console.log(localStorage)
-      navigate('/studentdashboard', { 
-        state: { 
-          student: response.data.data.student,
-          classInfo: response.data.data.class,
-          schoolInfo: response.data.data.school
-        } 
-      });
-    } else {
-      setError(response.data.error || 'Login failed');
+    e.preventDefault();
+    
+    if (!validateUsername(userName)) {
+      setUsernameError("Please enter a valid username in format: abc-firstname.lastname");
+      return;
     }
-  } catch (err) {
-    setError(err.response?.data?.error || 'Login failed. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      // Use the environment variable for API URL
+      const response = await axios.post(`${API_BASE_URL}/cobotKidsKenya/students/login`, {
+        userName,
+        password
+      });
+
+      if (response.data.success) {
+        // Store both student and class information
+        localStorage.setItem('studentId', response.data.data.student.id);
+        localStorage.setItem('classId', response.data.data.class.id);
+        
+        // Optional: Store the entire class object if needed
+        localStorage.setItem('classInfo', JSON.stringify(response.data.data.class));
+        
+        // Store school info if needed
+        localStorage.setItem('schoolInfo', JSON.stringify(response.data.data.school));
+        console.log(localStorage)
+        navigate('/studentdashboard', { 
+          state: { 
+            student: response.data.data.student,
+            classInfo: response.data.data.class,
+            schoolInfo: response.data.data.school
+          } 
+        });
+      } else {
+        setError(response.data.error || 'Login failed');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <div className="student-login-container">
-      <div className="login-form">
-        <h2>Welcome Back!</h2>
-        <p className="subtitle">Please login to continue</p>
-        <form onSubmit={handleSubmit}>
+     <div class="student-login-container">
+        <div class="login-form">
+            <h2>Welcome Back!</h2>
+            <p class="subtitle">Please login to continue</p>
+             <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="username">User Name</label>
             <input
@@ -160,15 +163,15 @@ function LogIn() {
             {loading ? "Logging in..." : "Login"}
           </button>
           {error && <div className="error-message">{error}</div>}
-        </form>
+        </form>     
 
-        <div className="bg-white p-3 rounded w-25">
-          <p>Don't have an account?</p>
-          <Link className="btn btn-default border w-100 bg-light rounded-0 text-decoration-none">
-            Ask Your Teacher
-          </Link>
+            <div class="signup-section">
+                <p>Don't have an account?</p>
+                <a href="#" class="signup-btn">
+                    Ask Your Teacher
+                </a>
+            </div>
         </div>
-      </div>
     </div>
   );
 }

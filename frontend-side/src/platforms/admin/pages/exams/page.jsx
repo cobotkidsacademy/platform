@@ -16,12 +16,13 @@ const ExamsPage = () => {
   });
 
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const loadCourses = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('https://platform-zl0a.onrender.com/cobotKidsKenya/courses');
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses`);
       if (!res.ok) throw new Error('Failed to fetch courses');
       const data = await res.json();
       setCourses(data);
@@ -40,7 +41,7 @@ const ExamsPage = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`https://platform-zl0a.onrender.com/cobotKidsKenya/courses/${courseId}/exams`);
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses/${courseId}/exams`);
       if (!res.ok) throw new Error('Failed to fetch exams');
       const result = await res.json();
       setExams(result.data || []);
@@ -61,7 +62,7 @@ const ExamsPage = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`https://platform-zl0a.onrender.com/cobotKidsKenya/courses/${selectedCourse}/exams`, {
+      const res = await fetch(`${API_URL}/cobotKidsKenya/courses/${selectedCourse}/exams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

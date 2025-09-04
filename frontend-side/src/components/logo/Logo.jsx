@@ -1,8 +1,9 @@
 import React from 'react'
 import CobotLogo from '../../assets/cobotLogo.png'
+import "../logo/logo.css"
 function Logo() {
   return (
-    <img src={CobotLogo} alt="" className="logo-icon"  style={{width:"200px"}}/>
+    <img src={CobotLogo} alt="" className="custom-logo"  />
   )
 }
 

@@ -39,6 +39,8 @@ function TutorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Fetch tutor details and assignments
   useEffect(() => {
     const fetchTutorData = async () => {
@@ -65,7 +67,7 @@ function TutorDashboard() {
 
         // Fetch tutor details
         try {
-          const tutorResponse = await axios.get(`https://platform-zl0a.onrender.com/cobotKidsKenya/tutors/${tutorId}`);
+          const tutorResponse = await axios.get(`${API_URL}/cobotKidsKenya/tutors/${tutorId}`);
           setTutorDetails(tutorResponse.data?.data || null);
         } catch (err) {
           console.error("Failed to fetch tutor details:", err);
@@ -74,7 +76,7 @@ function TutorDashboard() {
         // Fetch assignments
         try {
           setAssignmentsLoading(true);
-          const assignmentsResponse = await axios.get(`https://platform-zl0a.onrender.com/cobotKidsKenya/tutors/${tutorId}/assignments`);
+          const assignmentsResponse = await axios.get(`${API_URL}/cobotKidsKenya/tutors/${tutorId}/assignments`);
           setAssignments(Array.isArray(assignmentsResponse.data?.data) ? assignmentsResponse.data.data : []);
         } catch (err) {
           console.error("Failed to fetch assignments:", err);
@@ -91,7 +93,7 @@ function TutorDashboard() {
     };
 
     fetchTutorData();
-  }, []);
+  }, [API_URL]);
 
   // Dashboard stats
   const dashboardStats = {
@@ -114,7 +116,7 @@ function TutorDashboard() {
   const handleGenerateClassCode = async (schoolId, classId) => {
     try {
       const res = await axios.post(
-        `https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes/${classId}/generateCode`, 
+        `${API_URL}/cobotKidsKenya/schools/${schoolId}/classes/${classId}/generateCode`, 
         {},
         {
           headers: {
@@ -142,7 +144,6 @@ function TutorDashboard() {
       alert(err?.response?.data?.error || 'Failed to generate class code');
     }
   };
-
   const renderDashboard = () => (
     <div className="dashboard-overview">
       <h1>Hello {tutorDetails?.fname || 'Tutor'}, Here is an overview of your tutor's dashboard.</h1>

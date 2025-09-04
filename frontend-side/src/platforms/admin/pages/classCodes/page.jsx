@@ -7,6 +7,8 @@ const ClassCodesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -14,11 +16,11 @@ const ClassCodesPage = () => {
   const fetchClasses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://platform-zl0a.onrender.com/cobotKidsKenya/classCodes');
+      const response = await axios.get(`${API_URL}/cobotKidsKenya/classCodes`);
       setClasses(response.data.data);
     } catch (err) {
       setError('Failed to fetch classes');
-      console.error('Error fetching classes:', err);
+      console.error('Error fetchings classes:', err);
     } finally {
       setLoading(false);
     }
@@ -26,8 +28,8 @@ const ClassCodesPage = () => {
 
   const generateClassCode = async (schoolId, classId) => {
     try {
-      const response = await axios.post(`https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes/${classId}/generateCode`, {
-        generatedBy: 'admin' // You can replace this with actual admin ID
+      const response = await axios.post(`${API_URL}/cobotKidsKenya/schools/${schoolId}/classes/${classId}/generateCode`, {
+        generatedBy: 'admin' // can replace this with actual admin ID
       });
       
       if (response.data.success) {
@@ -47,7 +49,7 @@ const ClassCodesPage = () => {
 
   const updateClassCodeStatus = async (schoolId, classId, codeId, status) => {
     try {
-      const response = await axios.put(`https://platform-zl0a.onrender.com/cobotKidsKenya/schools/${schoolId}/classes/${classId}/classCode/${codeId}/status`, {
+      const response = await axios.put(`${API_URL}/cobotKidsKenya/schools/${schoolId}/classes/${classId}/classCode/${codeId}/status`, {
         status
       });
       

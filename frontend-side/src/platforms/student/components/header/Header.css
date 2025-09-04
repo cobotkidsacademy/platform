@@ -16,5 +16,6 @@
   padding: 1rem 2rem;
  background: linear-gradient(135deg, var(--bg-light) 0%, white 100%);
   color: white;
+  margin-bottom: 0;
 }
 
