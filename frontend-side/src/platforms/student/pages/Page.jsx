@@ -271,7 +271,7 @@ const StudentDashBoard = () => {
               <div
                 key={course._id || course.id}
                 onClick={() => handleCourseClick(course)}
-                className="bg-white shadow-md rounded-2xl h-80  flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300 
+                className="bg-white shadow-md rounded-2xl h-aouto  flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300 
                  animate-[wiggle_3s_ease-in-out_infinite]"
               >
                 {/* Status badge */}
@@ -285,9 +285,9 @@ const StudentDashBoard = () => {
                 <br />
                 <div class="flex gap-10 mt-auto ">
                   {/* Course name */}
-                  <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  <p class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-red">
                     {course.courseName}
-                  </h3>
+                  </p>
                   {/* Badges */}
                   <div className="flex gap-2 mt-3 justify-center">
                     {/* Code badge */}
